@@ -3,7 +3,6 @@
 <div align="center">
 
 [![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg?style=flat-square&logo=python&logoColor=white)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-emerald.svg?style=flat-square)](LICENSE)
 [![MITRE ATT&CK](https://img.shields.io/badge/MITRE%20ATT%26CK-v14%20Mapped-red.svg?style=flat-square)](https://attack.mitre.org/)
 [![Response Time](https://img.shields.io/badge/Containment-%3C%20150ms-success.svg?style=flat-square)](https://github.com/eshwarshetty06-creator/CanaryShield)
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux%20Core-lightgrey.svg?style=flat-square&logo=windows)](https://github.com/eshwarshetty06-creator/CanaryShield)
@@ -143,9 +142,3 @@ CanaryShield/
 ## ⚠️ Disclaimer
 
 The attack simulators (`mock_ransomware.py` and `advanced_mock_ransomware.py`) are strictly benign, non-destructive educational tools scoped exclusively to authorized lab folders.
-
----
-
-## 📜 License
-
-Distributed under the [MIT License](LICENSE).
