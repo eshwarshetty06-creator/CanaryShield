@@ -1,0 +1,5 @@
+FY2026 Q4 DEPARTMENT BUDGET FORECAST
+Engineering: $3,400,000
+Threat Research & Intel: $1,250,000
+Cloud Infrastructure: $920,000
+Compliance & Auditing: $450,000

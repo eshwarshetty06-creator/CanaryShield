@@ -1,0 +1,13 @@
+CS 401: Advanced Operating Systems - Assignment 3
+Student Name: Alex Mercer
+Topic: Virtual Memory Page Replacement Algorithms
+
+Summary:
+In this assignment, we implement and benchmark three virtual memory page replacement
+algorithms: Least Recently Used (LRU), First-In First-Out (FIFO), and the Second-Chance
+(Clock) algorithm.
+
+Observations:
+1. Under heavy sequential scanning, LRU suffers from cache thrashing.
+2. FIFO exhibits Belady's Anomaly where increasing frames results in more page faults.
+3. The Second-Chance algorithm strikes an effective balance between overhead and accuracy.

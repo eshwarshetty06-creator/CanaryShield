@@ -1,0 +1,17 @@
+Alex Mercer
+Principal Systems Security Engineer | Cloud Infrastructure Architect
+Email: alex.mercer@cyberdefense.internal | Location: Seattle, WA
+
+PROFESSIONAL SUMMARY
+Systems security engineer with 8+ years specializing in low-level kernel telemetry,
+ransomware behavioral mitigation, and automated threat hunting pipelines.
+
+TECHNICAL SKILLS
+- Languages: Python, C/C++, Rust, Go, Bash, PowerShell
+- Systems: Linux eBPF, Windows API, Kernel Driver Telemetry, Sysmon, Psutil
+- Security: MITRE ATT&CK, YARA, Reverse Engineering, EDR Architecture
+
+EXPERIENCE
+Lead Detection Engineer - CyberShield Labs (2022 - Present)
+- Architected tripwire deception systems protecting 50,000+ endpoints.
+- Reduced mean time to detect (MTTD) and neutralize ransomware from minutes to <100ms.

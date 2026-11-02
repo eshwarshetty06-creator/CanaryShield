@@ -1,0 +1,11 @@
+{
+  "artifact_type": "script_py",
+  "original_path": "C:\\Users\\eshwa\\OneDrive\\Desktop\\CanaryShield\\mock_ransomware.py",
+  "quarantine_path": "C:\\Users\\eshwa\\OneDrive\\Desktop\\CanaryShield\\quarantine\\20261021_192449_mock_ransomware.py.quarantine",
+  "sha256": "27b83f7147627dfb572d24b86f09291585a425ebb96bbe30b7e76b31c06a6c39",
+  "quarantine_time": "2026-10-21T19:24:49.282005",
+  "file_size": 4962,
+  "offending_pid": 9408,
+  "interpreter_used": "C:\\Users\\eshwa\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+  "command_line": "C:\\Users\\eshwa\\AppData\\Local\\Programs\\Python\\Python310\\python.exe mock_ransomware.py"
+}

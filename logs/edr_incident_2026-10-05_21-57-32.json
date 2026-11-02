@@ -1,0 +1,75 @@
+{
+  "incident_id": "EDR-INC-20261005-215732",
+  "timestamp": "2026-10-05T21:57:32.286551",
+  "monitored_directory": "C:\\Users\\eshwa\\OneDrive\\Desktop\\CanaryShield\\user_vault",
+  "triggered_canary": "zz_canary_archive_backup.txt",
+  "detection_source": "Watchdog-Kernel-Event",
+  "trigger_event": "CANARY_FILE_MODIFIED",
+  "baseline": {
+    "path": "C:\\Users\\eshwa\\OneDrive\\Desktop\\CanaryShield\\user_vault\\zz_canary_archive_backup.txt",
+    "dir": "C:\\Users\\eshwa\\OneDrive\\Desktop\\CanaryShield\\user_vault",
+    "filename": "zz_canary_archive_backup.txt",
+    "sha256": "c80e851e714ae0dcff1c8b3fe5dac97154321cc12daa2eaacdd087bd21cd6939",
+    "size": 1045,
+    "entropy": 5.1915,
+    "mtime": 1791217629.9917917,
+    "established_at": "2026-10-05T21:57:09.996259"
+  },
+  "compromised_hash": "2b11a892810dbf3865a7b28b36db583c091018cc26faf863fb7fc5d0dd6c8fa1",
+  "compromised_size": 1112,
+  "compromised_entropy": 7.8206,
+  "entropy_threshold": 7.0,
+  "ciphertext_detected": true,
+  "offending_process": {
+    "pid": 7524,
+    "name": "python.exe",
+    "exe": "C:\\Users\\eshwa\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+    "cmdline": "C:\\Users\\eshwa\\AppData\\Local\\Programs\\Python\\Python310\\python.exe advanced_mock_ransomware.py --reverse --dir user_vault",
+    "username": "ESHWAR\\eshwa",
+    "ppid": 12312,
+    "parent_name": "powershell.exe",
+    "create_time": "2026-10-05T21:57:32.073351",
+    "termination_time": "2026-10-05T21:57:32.336055",
+    "status": "TERMINATED",
+    "children_killed": []
+  },
+  "quarantine": {
+    "original_path": "C:\\Users\\eshwa\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+    "quarantine_path": "C:\\Users\\eshwa\\OneDrive\\Desktop\\CanaryShield\\quarantine\\20261005_215732_python.exe.quarantine",
+    "sha256": "94a83686261e9364cf3386b61a01a9f70936e8547da8962d16f1f850226b8954",
+    "quarantine_time": "2026-10-05T21:57:32.534697",
+    "file_size": 98536
+  },
+  "network_isolation_applied": true,
+  "payload_sample_hex": "2d 2d 2d 20 5b 45 4e 43 52 59 50 54 45 44 20 42 59 20 41 44 56 41 4e 43 45 44 2d 52 41 4e 53 4f 4d 57 41 52 45 2d 53 49 4d 55 4c 41 54 4f 52 20 7c 20 4d 49 54 52 45 20 54 31 34 38 36 5d 20 2d 2d 2d 0a 0f d1 4c 88 b6 1f 6a 1d 11 8b 9c 63 08 97 60 ee e2 95 e7 14 69 aa 7f 87 4c ec 5b 2c 0a",
+  "blast_radius": {
+    "!_canary_financial_records.txt": {
+      "size": 1385,
+      "entropy": 5.3934,
+      "sha256": "45f324797d12a73874e05f65deed2a31c330dc799d76ff2058588d1dac33620c",
+      "is_canary": true,
+      "compromised": true
+    },
+    "client_contracts.txt": {
+      "size": 228,
+      "entropy": 5.149,
+      "sha256": "40a248126b084aa6cd3a5e1fe5d55c17de7db81199c54cf445dd2d919576cfc0",
+      "is_canary": false,
+      "compromised": false
+    },
+    "quarterly_budget.txt": {
+      "size": 160,
+      "entropy": 5.1196,
+      "sha256": "bb4d8aced972445213c984b77c07a3f766bf8eb553a61ac8da953562a51bc94a",
+      "is_canary": false,
+      "compromised": false
+    },
+    "zz_canary_archive_backup.txt": {
+      "size": 1045,
+      "entropy": 5.1915,
+      "sha256": "c80e851e714ae0dcff1c8b3fe5dac97154321cc12daa2eaacdd087bd21cd6939",
+      "is_canary": true,
+      "compromised": false
+    }
+  }
+}

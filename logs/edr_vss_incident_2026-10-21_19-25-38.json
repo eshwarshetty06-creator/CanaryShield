@@ -1,0 +1,22 @@
+{
+  "incident_id": "VSS-INC-20261021-192538",
+  "timestamp": "2026-10-21T19:25:38.320190",
+  "threat_category": "INHIBIT_SYSTEM_RECOVERY",
+  "mitre_technique": "T1490",
+  "command_line": "c:\\users\\eshwa\\appdata\\local\\programs\\python\\python310\\python.exe -c import time; print('[vss inhibit payload] active: vssadmin delete shadows /all /quiet'); time.sleep(15)",
+  "offending_process": {
+    "pid": 3088,
+    "name": "python.exe",
+    "exe": "C:\\Users\\eshwa\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+    "cmdline": "C:\\Users\\eshwa\\AppData\\Local\\Programs\\Python\\Python310\\python.exe -c import time; print('[VSS Inhibit Payload] Active: vssadmin delete shadows /all /quiet'); time.sleep(15)",
+    "username": "ESHWAR\\eshwa",
+    "ppid": 24636,
+    "parent_name": "python.exe",
+    "create_time": "2026-10-21T19:25:37.258399",
+    "termination_time": "2026-10-21T19:25:37.434829",
+    "status": "TERMINATED",
+    "children_killed": []
+  },
+  "containment_action": "PROCESS_TREE_TERMINATED & FIREWALL_CONTAINMENT_ACTIVE",
+  "shadow_copies_preserved": true
+}

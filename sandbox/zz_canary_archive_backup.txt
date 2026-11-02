@@ -1,0 +1,27 @@
+================================================================================
+CONFIDENTIAL: CORPORATE TREASURY & FINANCIAL LEDGER (FY2026 - Q3)
+CLASSIFICATION: RESTRICTED / INTERNAL EYES ONLY
+================================================================================
+
+1. EXECUTIVE CASH RESERVES & LIQUIDITY
+   - Primary Operating Account (JPMorgan Chase): $14,850,230.12
+   - Secondary Escrow Reserve (Silicon Valley Bank): $4,200,000.00
+   - Automated Clearing House (ACH) Routing: 021000021 / Account: 8492019482
+   - Swift BIC: CHASEUS33XXX
+
+2. PAYROLL & COMPENSATION DISBURSEMENT (SEPTEMBER 2026)
+   - Executive Leadership Team: $425,000.00 (Disbursed Sep 15)
+   - Core Engineering & Platform Operations: $1,180,450.00 (Disbursed Sep 28)
+   - Security Operations & Threat Research: $390,200.00 (Disbursed Sep 28)
+   - Tax Withholdings (Federal/State IRS): $612,980.50
+
+3. VENDOR & INFRASTRUCTURE EXPENDITURES
+   - AWS GovCloud Infrastructure (Compute & S3): $184,320.18
+   - Cloudflare DDoS Mitigation & Zero Trust Gateway: $24,500.00
+   - CrowdStrike Falcon Complete Managed EDR: $48,000.00
+
+4. WIRE TRANSFER AUTHORIZATION KEY CODES
+   - Wire Reference #TX-98402: Authorized by Chief Financial Officer
+   - Dual-Control Token Checksum: A7F2-99B1-884C-109D
+
+[CONFIDENTIAL NOTICE: Unauthorized disclosure or modification is strictly prohibited.]

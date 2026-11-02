@@ -1,0 +1,13 @@
+Camera Trip Metadata - Pacific Northwest Expedition 2026
+Camera Body: Sony A7 IV
+Primary Lens: FE 24-70mm f/2.8 GM II
+
+Photo Log:
+- DSC04921.ARW: Sunrise over Mount Rainier (f/8, 1/250s, ISO 100)
+- DSC04922.ARW: Olympic National Park Rainforest canopy (f/4, 1/60s, ISO 400)
+- DSC04923.ARW: Cannon Beach sunset over Haystack Rock (f/11, 2.5s, ISO 50, ND filter)
+- DSC04924.ARW: Multnomah Falls upper bridge cascade (f/16, 1.0s, ISO 64)
+
+GPS Coordinates:
+- Mt Rainier Camp: 46.8523° N, 121.7603° W
+- Olympic Trailhead: 47.8021° N, 123.6044° W

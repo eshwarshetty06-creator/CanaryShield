@@ -1,0 +1,68 @@
+{
+  "incident_id": "INC-20261005-221218",
+  "timestamp": "2026-10-05T22:12:18.486148",
+  "canary_file": "!_canary_financial_records.txt",
+  "canary_path": "C:\\Users\\eshwa\\OneDrive\\Desktop\\CanaryShield\\sandbox\\!_canary_financial_records.txt",
+  "trigger_event": "CANARY_FILE_MODIFIED",
+  "detection_source": "Watchdog-Kernel-Event",
+  "baseline_timestamp": "2026-10-05T22:10:52.341051",
+  "baseline_hash": "45f324797d12a73874e05f65deed2a31c330dc799d76ff2058588d1dac33620c",
+  "baseline_size": 1385,
+  "baseline_entropy": 5.3934,
+  "compromised_hash": "b5453b2d9b4609e1e0905e1b31c4203bcb90bc2f5dc9b7db850631eb7fcc3cd6",
+  "compromised_size": 1458,
+  "compromised_entropy": 7.8643,
+  "entropy_threshold": 7.0,
+  "ciphertext_detected": true,
+  "offending_process": {
+    "pid": 11136,
+    "name": "python.exe",
+    "exe": "C:\\Users\\eshwa\\AppData\\Local\\Programs\\Python\\Python310\\python.exe",
+    "cmdline": "C:\\Users\\eshwa\\AppData\\Local\\Programs\\Python\\Python310\\python.exe mock_ransomware.py",
+    "username": "ESHWAR\\eshwa",
+    "ppid": 12412,
+    "parent_name": "powershell.exe",
+    "create_time": "2026-10-05T22:12:18.319964",
+    "termination_time": "2026-10-05T22:12:18.528301",
+    "status": "TERMINATED",
+    "children_killed": []
+  },
+  "payload_sample_hex": "2d 2d 2d 20 5b 45 4e 43 52 59 50 54 45 44 20 42 59 20 4d 4f 43 4b 2d 52 41 4e 53 4f 4d 57 41 52 45 20 76 32 2e 34 20 7c 20 43 4f 4e 54 41 43 54 20 44 45 43 52 59 50 54 40 54 45 53 54 2e 4c 4f 43 41 4c 5d 20 2d 2d 2d 0a a4 df 9c 23 1c 16 e3 7e 71 dd 34 d4 7e f4 b2 42 4f 5d 41 8b d7 39 67",
+  "blast_radius": {
+    "!_canary_financial_records.txt": {
+      "size": 1458,
+      "entropy": 7.8643,
+      "sha256": "b5453b2d9b4609e1e0905e1b31c4203bcb90bc2f5dc9b7db850631eb7fcc3cd6",
+      "is_canary": true,
+      "compromised": true
+    },
+    "assignment.txt": {
+      "size": 604,
+      "entropy": 4.8844,
+      "sha256": "459123b38c101d8a174e2d98281b2a8fd945f71201a1a513d6356b2dbee1a244",
+      "is_canary": false,
+      "compromised": false
+    },
+    "photos_info.txt": {
+      "size": 558,
+      "entropy": 5.4258,
+      "sha256": "093a8562ede779d1a5059022046e2aad7654f854a49bc562c575f30778e97aed",
+      "is_canary": false,
+      "compromised": false
+    },
+    "resume.txt": {
+      "size": 792,
+      "entropy": 5.0787,
+      "sha256": "86709731a2662d88b94f30e168335dd60ed0215cb5bd52ed8ffca0c57c0b7a80",
+      "is_canary": false,
+      "compromised": false
+    },
+    "zz_canary_archive_backup.txt": {
+      "size": 1045,
+      "entropy": 5.1915,
+      "sha256": "c80e851e714ae0dcff1c8b3fe5dac97154321cc12daa2eaacdd087bd21cd6939",
+      "is_canary": false,
+      "compromised": false
+    }
+  }
+}
