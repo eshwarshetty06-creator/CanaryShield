@@ -35,12 +35,17 @@ from config import (
     LOGS_DIR,
     CANARY_FILENAME,
     CANARY_FILEPATH,
+    CANARY_FLEET,
+    CANARY_NAMES_SET,
     SHANNON_ENTROPY_THRESHOLD,
     FALLBACK_POLL_INTERVAL,
     AUTO_NEUTRALIZE,
     KILL_PROCESS_TREE,
+    AUTO_RESTORE_CANARY,
     MITRE_ATTACK_MAPPINGS,
-    DEFAULT_CANARY_CONTENT
+    DEFAULT_CANARY_CONTENT,
+    generate_canary_file,
+    boost_process_priority
 )
 
 # Setup Logging
@@ -82,6 +87,7 @@ class CanaryMonitor:
         self.canary_path = CANARY_FILEPATH
         self.sandbox_dir = SANDBOX_DIR
         self.logs_dir = LOGS_DIR
+        self.canary_baselines: Dict[str, Dict[str, Any]] = {}
         self.baseline_hash: Optional[str] = None
         self.baseline_entropy: float = 0.0
         self.baseline_size: int = 0
@@ -96,51 +102,73 @@ class CanaryMonitor:
         self.polling_thread: Optional[threading.Thread] = None
 
     def establish_baseline(self):
-        """Validates or generates the canary file and establishes cryptographic baseline."""
+        """Validates or generates the canary matrix and establishes cryptographic baselines."""
+        boost_process_priority()
+
         if not self.sandbox_dir.exists():
             self.sandbox_dir.mkdir(parents=True, exist_ok=True)
         if not self.logs_dir.exists():
             self.logs_dir.mkdir(parents=True, exist_ok=True)
 
-        if not self.canary_path.exists():
-            logger.info("Canary file not found. Deploying baseline tripwire canary...")
-            with open(self.canary_path, "w", encoding="utf-8") as f:
-                f.write(DEFAULT_CANARY_CONTENT)
-
-        raw_bytes = self.canary_path.read_bytes()
-        self.baseline_size = len(raw_bytes)
-        self.baseline_hash = get_file_sha256(self.canary_path)
-        self.baseline_entropy = calculate_entropy(raw_bytes)
-        self.baseline_mtime = self.canary_path.stat().st_mtime
+        self.canary_baselines.clear()
         self.baseline_timestamp = datetime.now().isoformat()
 
         logger.info("=" * 75)
-        logger.info("   CANARYSHIELD: CRYPTOGRAPHIC BASELINE ESTABLISHED")
+        logger.info("   CANARYSHIELD: MULTI-EXTENSION FLEET BASELINE ESTABLISHED")
         logger.info("=" * 75)
-        logger.info(f"[*] Tripwire Canary  : {self.canary_path.name}")
-        logger.info(f"[*] Absolute Path    : {self.canary_path}")
-        logger.info(f"[*] File Size        : {self.baseline_size} bytes")
-        logger.info(f"[*] SHA-256 Hash     : {self.baseline_hash}")
-        logger.info(f"[*] Shannon Entropy  : {self.baseline_entropy:.4f} bits/byte (Plaintext < {SHANNON_ENTROPY_THRESHOLD})")
-        logger.info(f"[*] Fallback Interval: {FALLBACK_POLL_INTERVAL}s polling loop active")
+
+        for item in CANARY_FLEET:
+            fname = item["filename"]
+            fpath = self.sandbox_dir / fname
+            if not fpath.exists():
+                generate_canary_file(fname, fpath)
+
+            raw_bytes = fpath.read_bytes()
+            f_size = len(raw_bytes)
+            f_hash = get_file_sha256(fpath)
+            f_ent = calculate_entropy(raw_bytes)
+            f_mtime = fpath.stat().st_mtime
+
+            self.canary_baselines[fname] = {
+                "path": fpath,
+                "size": f_size,
+                "hash": f_hash,
+                "entropy": f_ent,
+                "mtime": f_mtime,
+                "type": item["type"],
+                "traversal": item["traversal"],
+                "stealth": item.get("stealth", False)
+            }
+
+            if fname == CANARY_FILENAME:
+                self.baseline_size = f_size
+                self.baseline_hash = f_hash
+                self.baseline_entropy = f_ent
+                self.baseline_mtime = f_mtime
+
+        logger.info(f"[*] Process Scheduling: HIGH_PRIORITY_CLASS (Anti-Race Preemption Active)")
+        logger.info(f"[*] Active Tripwires  : {len(self.canary_baselines)} decoys primed (Standard + Stealth Anti-Evasion)")
+        logger.info(f"[*] Shannon Threshold : {SHANNON_ENTROPY_THRESHOLD} bits/byte (High Entropy Scrambling Filter)")
+        logger.info(f"[*] Fallback Interval : {FALLBACK_POLL_INTERVAL}s heartbeat loop")
         logger.info("-" * 75)
 
-    def find_rogue_process(self) -> Optional[psutil.Process]:
+    def find_rogue_process(self, target_file: Optional[Path] = None) -> Optional[psutil.Process]:
         """
         Rapidly inspects the system process table to identify the rogue process.
         Uses a high-performance heuristic to avoid blocking on OS system handles:
-        1. Immediate check: Command line matching 'mock_ransomware' or canary filename.
+        1. Immediate check: Command line matching 'mock_ransomware', target file, or canary names.
         2. Workspace check: Active script interpreters (Python/PowerShell) targeting sandbox.
         3. Targeted handle check: Open file inspection restricted only to suspicious processes.
         """
         current_pid = os.getpid()
-        target_name_lower = CANARY_FILENAME.lower()
+        target_name_lower = target_file.name.lower() if target_file else CANARY_FILENAME.lower()
         sandbox_path_str = str(self.sandbox_dir.resolve()).lower()
         base_path_str = str(BASE_DIR.resolve()).lower()
+        canary_names_lower = {n.lower() for n in CANARY_NAMES_SET}
         candidate_procs: List[psutil.Process] = []
 
-        # Iterate process table with lightweight attributes only
-        for proc in psutil.process_iter(['pid', 'name', 'cmdline', 'cwd']):
+        # Iterate process table with lightweight attributes only (avoiding cwd to prevent AccessDenied)
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
             try:
                 p_pid = proc.info['pid']
                 if p_pid == current_pid:
@@ -149,23 +177,27 @@ class CanaryMonitor:
                 cmdline_list = proc.info.get('cmdline') or []
                 cmdline_str = " ".join(cmdline_list).lower()
                 p_name_lower = (proc.info.get('name') or "").lower()
-                cwd_str = (proc.info.get('cwd') or "").lower()
 
-                # Rule 1 (Instant Match): Command line explicitly mentions mock_ransomware or canary
-                if "mock_ransomware" in cmdline_str or target_name_lower in cmdline_str:
+                # Rule 1 (Instant Match): Command line explicitly mentions mock_ransomware, target file, or any canary
+                if "mock_ransomware" in cmdline_str or target_name_lower in cmdline_str or any(c in cmdline_str for c in canary_names_lower):
                     logger.info(f"[Process Table] High-confidence match: PID {p_pid} ({p_name_lower}) -> {cmdline_str}")
                     return proc
 
-                # Rule 2: Interpreter or script process whose working directory or arguments contain sandbox/workspace
+                # Rule 2: Interpreter or script process whose arguments contain sandbox/workspace
                 if any(interp in p_name_lower for interp in ["python", "powershell", "cmd", "pwsh"]):
-                    if sandbox_path_str in cmdline_str or base_path_str in cmdline_str or sandbox_path_str in cwd_str:
+                    if sandbox_path_str in cmdline_str or base_path_str in cmdline_str:
                         # Ensure it's not the canary monitor itself
                         if "canary_monitor" not in cmdline_str:
                             candidate_procs.append(proc)
 
-                # Rule 3: Process currently located inside the sandbox directory
-                elif sandbox_path_str in cwd_str:
-                    candidate_procs.append(proc)
+                # Rule 3: Process whose working directory is inside sandbox
+                else:
+                    try:
+                        p_cwd = (proc.cwd() or "").lower()
+                        if sandbox_path_str in p_cwd:
+                            candidate_procs.append(proc)
+                    except Exception:
+                        pass
 
             except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
                 continue
@@ -175,7 +207,8 @@ class CanaryMonitor:
             for cand in candidate_procs:
                 try:
                     for f in cand.open_files():
-                        if target_name_lower in f.path.lower() or sandbox_path_str in f.path.lower():
+                        f_lower = f.path.lower()
+                        if target_name_lower in f_lower or any(c in f_lower for c in canary_names_lower) or sandbox_path_str in f_lower:
                             logger.info(f"[Process Table] Candidate handle verified: PID {cand.pid}")
                             return cand
                 except (psutil.AccessDenied, psutil.NoSuchProcess):
@@ -263,14 +296,17 @@ class CanaryMonitor:
                 raw = f.read_bytes()
                 f_entropy = calculate_entropy(raw)
                 f_hash = get_file_sha256(f)
-                is_canary = (f.name == CANARY_FILENAME)
+                is_canary = (f.name in CANARY_NAMES_SET)
+                b_info = self.canary_baselines.get(f.name)
+                b_hash = b_info["hash"] if b_info else None
                 is_encrypted = f_entropy >= SHANNON_ENTROPY_THRESHOLD
+                is_compromised = is_encrypted or (is_canary and b_hash and f_hash != b_hash)
                 assessment[f.name] = {
                     "size": len(raw),
                     "entropy": f_entropy,
                     "sha256": f_hash,
                     "is_canary": is_canary,
-                    "compromised": is_encrypted or (is_canary and f_hash != self.baseline_hash)
+                    "compromised": is_compromised
                 }
         return assessment
 
@@ -428,21 +464,25 @@ class CanaryMonitor:
         logger.info(f"[REPORT] Forensic incident JSON artifact created: {json_path}")
         return md_path
 
-    def handle_tripwire_breach(self, trigger_event: str, detection_source: str):
+    def handle_tripwire_breach(self, trigger_file: Optional[Path], trigger_event: str, detection_source: str):
         """Orchestrates detection, neutralization, and reporting when tripwire fires."""
         with self.incident_lock:
             if self.incident_handled:
                 return  # Prevent duplicate mitigation on multiple OS events
             self.incident_handled = True
 
+        if trigger_file is None:
+            trigger_file = self.canary_path
+
         incident_time = datetime.now()
         logger.warning("\n" + "!" * 75)
-        logger.warning(f"   [TRIPWIRE TRIGGERED] UNAUTHORIZED CANARY ACCESS DETECTED!")
+        logger.warning(f"   [TRIPWIRE TRIGGERED] UNAUTHORIZED DECOY ACCESS DETECTED!")
+        logger.warning(f"   [!] Breached Decoy: {trigger_file.name}")
         logger.warning(f"   [!] Source: {detection_source} | Event: {trigger_event}")
         logger.warning("!" * 75)
 
-        # 1. Immediate Process Neutralization
-        rogue_proc = self.find_rogue_process()
+        # 1. Immediate Process Neutralization (Thread suspension + SIGKILL)
+        rogue_proc = self.find_rogue_process(trigger_file)
         offending_info = None
 
         if rogue_proc and AUTO_NEUTRALIZE:
@@ -451,18 +491,18 @@ class CanaryMonitor:
         elif not rogue_proc:
             logger.warning("[DEFENSE ACTIVE] Rogue process already exited or file handle was transient.")
 
-        # 2. Gather Evidence from Canary File
+        # 2. Gather Evidence from the Breached Decoy File
         compromised_data = b""
         compromised_hash = "FILE_REMOVED"
         compromised_entropy = 0.0
         compromised_size = 0
         sample_hex = ""
 
-        if self.canary_path.exists():
+        if trigger_file.exists():
             try:
-                compromised_data = self.canary_path.read_bytes()
+                compromised_data = trigger_file.read_bytes()
                 compromised_size = len(compromised_data)
-                compromised_hash = get_file_sha256(self.canary_path)
+                compromised_hash = get_file_sha256(trigger_file)
                 compromised_entropy = calculate_entropy(compromised_data)
                 # Format hex sample
                 sample = compromised_data[:96]
@@ -470,35 +510,49 @@ class CanaryMonitor:
             except Exception as e:
                 logger.error(f"Error reading compromised canary file: {e}")
 
+        # Fetch baseline telemetry for this specific decoy
+        b_info = self.canary_baselines.get(trigger_file.name, {})
+        base_h = b_info.get("hash", self.baseline_hash)
+        base_e = b_info.get("entropy", self.baseline_entropy)
+        base_sz = b_info.get("size", self.baseline_size)
+
         logger.info("-" * 75)
-        logger.info(f"[*] Cryptographic Fingerprint Comparison:")
-        logger.info(f"    - Baseline SHA-256    : {self.baseline_hash}")
+        logger.info(f"[*] Cryptographic Fingerprint Comparison for '{trigger_file.name}':")
+        logger.info(f"    - Baseline SHA-256    : {base_h}")
         logger.info(f"    - Compromised SHA-256 : {compromised_hash}")
-        logger.info(f"    - Baseline Entropy    : {self.baseline_entropy:.4f} bits/byte")
+        logger.info(f"    - Baseline Entropy    : {base_e:.4f} bits/byte")
         logger.info(f"    - Compromised Entropy : {compromised_entropy:.4f} bits/byte")
 
         is_entropy_breach = compromised_entropy >= SHANNON_ENTROPY_THRESHOLD
         if is_entropy_breach:
-            logger.warning(f"[!] ENTROPY ALERT: {compromised_entropy:.4f} > {SHANNON_ENTROPY_THRESHOLD} (CIPHERTEXT DETECTED)")
+            logger.warning(f"[!] ENTROPY ALERT: {compromised_entropy:.4f} > {SHANNON_ENTROPY_THRESHOLD} (CIPHERTEXT SCRAMBLING DETECTED)")
         else:
             logger.warning(f"[!] HASH MISMATCH ALERT: File integrity breached.")
 
         # 3. Assess Blast Radius (Verify non-canary files were protected)
         blast_radius = self.assess_blast_radius()
 
-        # 4. Compile Incident Record
+        # 4. Self-Healing Decoy: Re-arm tripped canary immediately
+        if AUTO_RESTORE_CANARY and trigger_file.exists():
+            try:
+                generate_canary_file(trigger_file.name, trigger_file)
+                logger.info(f"[SELF-HEALING] Tripped decoy '{trigger_file.name}' re-armed and restored to clean state.")
+            except Exception as e:
+                logger.debug(f"Could not re-arm canary: {e}")
+
+        # 5. Compile Incident Record
         incident_id = f"INC-{incident_time.strftime('%Y%m%d-%H%M%S')}"
         incident_record = {
             "incident_id": incident_id,
             "timestamp": incident_time.isoformat(),
-            "canary_file": CANARY_FILENAME,
-            "canary_path": str(self.canary_path),
+            "canary_file": trigger_file.name,
+            "canary_path": str(trigger_file.resolve()),
             "trigger_event": trigger_event,
             "detection_source": detection_source,
             "baseline_timestamp": self.baseline_timestamp,
-            "baseline_hash": self.baseline_hash,
-            "baseline_size": self.baseline_size,
-            "baseline_entropy": self.baseline_entropy,
+            "baseline_hash": base_h,
+            "baseline_size": base_sz,
+            "baseline_entropy": base_e,
             "compromised_hash": compromised_hash,
             "compromised_size": compromised_size,
             "compromised_entropy": compromised_entropy,
@@ -509,7 +563,7 @@ class CanaryMonitor:
             "blast_radius": blast_radius
         }
 
-        # 5. Generate Forensic Audit Report
+        # 6. Generate Forensic Audit Report
         report_path = self.generate_forensic_report(incident_record)
 
         logger.info("\n" + "=" * 75)
@@ -519,9 +573,10 @@ class CanaryMonitor:
         if offending_info:
             logger.info(f"[+] Terminated PID       : {offending_info['pid']} ({offending_info['name']})")
             logger.info(f"[+] Command Line         : {offending_info['cmdline']}")
-        logger.info(f"[+] Canary Entropy       : {compromised_entropy:.4f} bits/byte (Baseline: {self.baseline_entropy:.4f})")
+        logger.info(f"[+] Canary Entropy       : {compromised_entropy:.4f} bits/byte (Baseline: {base_e:.4f})")
         preserved_docs = sum(1 for f in blast_radius.values() if not f['is_canary'] and not f['compromised'])
-        logger.info(f"[+] Protected User Files : {preserved_docs}/3 PRESERVED (100% UNTOUCHED)")
+        total_docs = sum(1 for f in blast_radius.values() if not f['is_canary'])
+        logger.info(f"[+] Protected User Files : {preserved_docs}/{total_docs} PRESERVED (100% UNTOUCHED)")
         logger.info(f"[+] Forensic Audit Doc   : {report_path.name}")
         logger.info("=" * 75 + "\n")
 
@@ -532,45 +587,58 @@ class CanaryMonitor:
             if self.incident_handled:
                 break
 
-            try:
-                if not self.canary_path.exists():
-                    self.handle_tripwire_breach("CANARY_FILE_DELETED", "Fallback-Polling-Engine")
-                    break
-
-                current_stat = self.canary_path.stat()
-                if (current_stat.st_mtime != self.baseline_mtime) or (current_stat.st_size != self.baseline_size):
-                    current_hash = get_file_sha256(self.canary_path)
-                    if current_hash != self.baseline_hash:
-                        self.handle_tripwire_breach("CANARY_HASH_MISMATCH", "Fallback-Polling-Engine")
+            for fname, b_info in list(self.canary_baselines.items()):
+                fpath = b_info["path"]
+                try:
+                    if not fpath.exists():
+                        self.handle_tripwire_breach(fpath, "CANARY_FILE_DELETED", "Fallback-Polling-Engine")
                         break
-            except Exception:
-                continue
+
+                    st = fpath.stat()
+                    if (st.st_mtime != b_info["mtime"]) or (st.st_size != b_info["size"]):
+                        curr_hash = get_file_sha256(fpath)
+                        if curr_hash != b_info["hash"]:
+                            self.handle_tripwire_breach(fpath, "CANARY_HASH_MISMATCH", "Fallback-Polling-Engine")
+                            break
+                except Exception:
+                    continue
 
 
 class CanaryWatchdogHandler(FileSystemEventHandler):
-    """Event handler capturing filesystem mutations directed at the canary."""
+    """Event handler capturing filesystem mutations directed at the canary matrix."""
     def __init__(self, monitor: CanaryMonitor):
         super().__init__()
         self.monitor = monitor
-        self.target_name = CANARY_FILENAME
+        self.canary_names = CANARY_NAMES_SET
 
     def on_modified(self, event):
-        if not event.is_directory and Path(event.src_path).name == self.target_name:
-            # Verify if content actually changed to avoid spurious OS touch events
-            try:
-                current_hash = get_file_sha256(self.monitor.canary_path)
-                if current_hash != self.monitor.baseline_hash:
-                    self.monitor.handle_tripwire_breach("CANARY_FILE_MODIFIED", "Watchdog-Kernel-Event")
-            except Exception:
-                self.monitor.handle_tripwire_breach("CANARY_FILE_MODIFIED", "Watchdog-Kernel-Event")
+        if not event.is_directory:
+            p = Path(event.src_path)
+            if p.name in self.canary_names:
+                b_info = self.monitor.canary_baselines.get(p.name)
+                if b_info:
+                    try:
+                        curr_hash = get_file_sha256(p)
+                        if curr_hash != b_info["hash"]:
+                            self.monitor.handle_tripwire_breach(p, "CANARY_FILE_MODIFIED", "Watchdog-Kernel-Event")
+                    except Exception:
+                        self.monitor.handle_tripwire_breach(p, "CANARY_FILE_MODIFIED", "Watchdog-Kernel-Event")
+                else:
+                    self.monitor.handle_tripwire_breach(p, "CANARY_FILE_MODIFIED", "Watchdog-Kernel-Event")
 
     def on_deleted(self, event):
-        if not event.is_directory and Path(event.src_path).name == self.target_name:
-            self.monitor.handle_tripwire_breach("CANARY_FILE_DELETED", "Watchdog-Kernel-Event")
+        if not event.is_directory:
+            p = Path(event.src_path)
+            if p.name in self.canary_names:
+                self.monitor.handle_tripwire_breach(p, "CANARY_FILE_DELETED", "Watchdog-Kernel-Event")
 
     def on_moved(self, event):
-        if not event.is_directory and (Path(event.src_path).name == self.target_name or Path(event.dest_path).name == self.target_name):
-            self.monitor.handle_tripwire_breach("CANARY_FILE_RENAMED", "Watchdog-Kernel-Event")
+        if not event.is_directory:
+            src = Path(event.src_path)
+            dest = Path(event.dest_path)
+            if src.name in self.canary_names or dest.name in self.canary_names:
+                target = dest if dest.name in self.canary_names else src
+                self.monitor.handle_tripwire_breach(target, "CANARY_FILE_RENAMED", "Watchdog-Kernel-Event")
 
 
 def start_monitor():

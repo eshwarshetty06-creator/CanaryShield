@@ -1,0 +1,119 @@
+{
+  "incident_id": "INC-20261113-134138",
+  "timestamp": "2026-11-13T13:41:38.520729",
+  "canary_file": "!_accounting_customer_vault.db",
+  "canary_path": "C:\\Users\\eshwa\\OneDrive\\Desktop\\CanaryShield\\sandbox\\!_accounting_customer_vault.db",
+  "trigger_event": "CANARY_FILE_MODIFIED",
+  "detection_source": "Watchdog-Kernel-Event",
+  "baseline_timestamp": "2026-11-13T13:41:31.903731",
+  "baseline_hash": "8db08446ee9557af753f583c5f74e30788b9b9ae184ae21d8143908c83cdb82e",
+  "baseline_size": 12288,
+  "baseline_entropy": 2.1984,
+  "compromised_hash": "dc4f22ad9c90f5e092bd62a740c976ff668f34cee600c193b04e93cecc1440f1",
+  "compromised_size": 12361,
+  "compromised_entropy": 7.9863,
+  "entropy_threshold": 7.0,
+  "ciphertext_detected": true,
+  "offending_process": null,
+  "payload_sample_hex": "2d 2d 2d 20 5b 45 4e 43 52 59 50 54 45 44 20 42 59 20 4d 4f 43 4b 2d 52 41 4e 53 4f 4d 57 41 52 45 20 76 32 2e 34 20 7c 20 43 4f 4e 54 41 43 54 20 44 45 43 52 59 50 54 40 54 45 53 54 2e 4c 4f 43 41 4c 5d 20 2d 2d 2d 0a a9 fc bb fb df 94 af eb e5 a2 53 5c 59 8a 33 4f 66 63 e7 a5 da 80 71",
+  "blast_radius": {
+    "!_accounting_customer_vault.db": {
+      "size": 12361,
+      "entropy": 7.9863,
+      "sha256": "dc4f22ad9c90f5e092bd62a740c976ff668f34cee600c193b04e93cecc1440f1",
+      "is_canary": true,
+      "compromised": true
+    },
+    "!_canary_customer_vault.db": {
+      "size": 12288,
+      "entropy": 2.1984,
+      "sha256": "8db08446ee9557af753f583c5f74e30788b9b9ae184ae21d8143908c83cdb82e",
+      "is_canary": true,
+      "compromised": false
+    },
+    "!_canary_executive_payroll.xlsx": {
+      "size": 5005,
+      "entropy": 5.2335,
+      "sha256": "ad34ce85c409ec5f07a6a9fac16f7ee972db077d036111a05a5dcd9212aec4d8",
+      "is_canary": true,
+      "compromised": false
+    },
+    "!_canary_financial_records.txt": {
+      "size": 1385,
+      "entropy": 5.3934,
+      "sha256": "45f324797d12a73874e05f65deed2a31c330dc799d76ff2058588d1dac33620c",
+      "is_canary": true,
+      "compromised": false
+    },
+    "!_canary_legal_contract.docx": {
+      "size": 629,
+      "entropy": 5.5433,
+      "sha256": "5bc26f6a15e83d867a44ef2a465d78542524dec20835f3a274e11e391521a010",
+      "is_canary": true,
+      "compromised": false
+    },
+    "!_canary_tarpit_master_ledger.dat": {
+      "size": 2280246,
+      "entropy": 4.9204,
+      "sha256": "8472079b4cf856c17b0f34036cdd824f9bdc7231b97a950677183ceedf36cf8d",
+      "is_canary": true,
+      "compromised": false
+    },
+    "!_executive_payroll_records.xlsx": {
+      "size": 5005,
+      "entropy": 5.2335,
+      "sha256": "ad34ce85c409ec5f07a6a9fac16f7ee972db077d036111a05a5dcd9212aec4d8",
+      "is_canary": true,
+      "compromised": false
+    },
+    "assignment.txt": {
+      "size": 604,
+      "entropy": 4.8844,
+      "sha256": "459123b38c101d8a174e2d98281b2a8fd945f71201a1a513d6356b2dbee1a244",
+      "is_canary": false,
+      "compromised": false
+    },
+    "photos_info.txt": {
+      "size": 558,
+      "entropy": 5.4258,
+      "sha256": "093a8562ede779d1a5059022046e2aad7654f854a49bc562c575f30778e97aed",
+      "is_canary": false,
+      "compromised": false
+    },
+    "resume.txt": {
+      "size": 792,
+      "entropy": 5.0787,
+      "sha256": "86709731a2662d88b94f30e168335dd60ed0215cb5bd52ed8ffca0c57c0b7a80",
+      "is_canary": false,
+      "compromised": false
+    },
+    "zz_canary_archive_backup.txt": {
+      "size": 1358,
+      "entropy": 5.5154,
+      "sha256": "179912bc83a20174b7cd9d9cde5ae63e0f86841b81b083849370dd0dc582175b",
+      "is_canary": true,
+      "compromised": false
+    },
+    "zz_canary_archive_backup.zip": {
+      "size": 1358,
+      "entropy": 5.5154,
+      "sha256": "179912bc83a20174b7cd9d9cde5ae63e0f86841b81b083849370dd0dc582175b",
+      "is_canary": true,
+      "compromised": false
+    },
+    "zz_canary_cold_storage.bak": {
+      "size": 1045,
+      "entropy": 5.1915,
+      "sha256": "c80e851e714ae0dcff1c8b3fe5dac97154321cc12daa2eaacdd087bd21cd6939",
+      "is_canary": true,
+      "compromised": false
+    },
+    "zz_cold_storage_manifest.bak": {
+      "size": 1045,
+      "entropy": 5.1915,
+      "sha256": "c80e851e714ae0dcff1c8b3fe5dac97154321cc12daa2eaacdd087bd21cd6939",
+      "is_canary": true,
+      "compromised": false
+    }
+  }
+}

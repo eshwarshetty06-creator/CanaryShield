@@ -63,7 +63,8 @@ from config import (
     DEFAULT_CANARY_CONTENT,
     REVERSE_CANARY_CONTENT,
     MITRE_ATTACK_MAPPINGS,
-    generate_canary_file
+    generate_canary_file,
+    boost_process_priority
 )
 
 # Setup Agent Logging
@@ -287,6 +288,7 @@ class CanaryEDRAgent:
 
     def establish_all_baselines(self):
         """Discovers and establishes cryptographic baselines for all canaries across all directories."""
+        boost_process_priority()
         self.protected_dirs = ProtectedDirectoryManager.load_protected_directories()
         self.canary_baselines.clear()
 

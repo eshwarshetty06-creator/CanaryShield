@@ -16,7 +16,8 @@ from config import (
     CANARY_FLEET,
     CANARY_NAMES_SET,
     DEFAULT_USER_FILES,
-    generate_canary_file
+    generate_canary_file,
+    set_file_hidden
 )
 
 def calculate_entropy(data: bytes) -> float:
@@ -88,8 +89,13 @@ def display_status():
             sha = get_file_sha256(f)[:16]
             if f.name in fleet_dict:
                 item = fleet_dict[f.name]
+                is_stealth = item.get("stealth", False)
                 if item["type"] == "tarpit":
                     role = "[TAR-PIT DELAY]"
+                elif is_stealth:
+                    prefix = "STEALTH "
+                    trav = "A-Z" if item["traversal"] == "FORWARD" else "Z-A"
+                    role = f"[{prefix}{trav} ({item['type'].upper()})]"
                 elif item["traversal"] == "FORWARD":
                     role = f"[A-Z TRIPWIRE ({item['type'].upper()})]"
                 else:
@@ -102,6 +108,17 @@ def display_status():
     print("-" * 95)
     print(f"[+] All files verified. Canary Matrix primed ({len(CANARY_FLEET)} decoys).")
     print("[+] Baseline entropy confirms clean unencrypted state.\n")
+
+def apply_stealth_attributes(hide: bool = True):
+    """Sets or clears Windows Hidden file attributes on canaries to prevent human tampering."""
+    count = 0
+    for filename in CANARY_NAMES_SET:
+        target = SANDBOX_DIR / filename
+        if target.exists():
+            if set_file_hidden(target, hide=hide):
+                count += 1
+    action = "hidden from normal File Explorer browsing" if hide else "revealed as visible"
+    print(f"[+] {count} canary decoy(s) successfully {action}.")
 
 def clean_logs():
     """Removes all generated incident logs and quarantined artifacts."""
@@ -126,5 +143,9 @@ if __name__ == "__main__":
         display_status()
     elif "--clean-logs" in sys.argv:
         clean_logs()
+    elif "--hide-canaries" in sys.argv:
+        apply_stealth_attributes(hide=True)
+    elif "--unhide-canaries" in sys.argv:
+        apply_stealth_attributes(hide=False)
     else:
         initialize_sandbox(verbose=True)

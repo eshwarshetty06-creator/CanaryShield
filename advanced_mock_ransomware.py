@@ -65,7 +65,7 @@ def simulate_vss_tamper():
         proc.kill()
 
 
-def simulate_attack(target_dir: Path, reverse_order: bool = False, delay: float = 1.0):
+def simulate_attack(target_dir: Path, reverse_order: bool = False, delay: float = 1.0, evasion_filter: bool = False):
     pid = os.getpid()
     resolved_dir = target_dir.resolve()
 
@@ -74,6 +74,8 @@ def simulate_attack(target_dir: Path, reverse_order: bool = False, delay: float 
     print(f"   [!] Process ID (PID)  : {pid}")
     print(f"   [!] Target Directory  : {resolved_dir}")
     print(f"   [!] Traversal Pattern : {'REVERSE (Z -> A)' if reverse_order else 'FORWARD (A -> Z)'}")
+    if evasion_filter:
+        print("   [!] Evasion Tactic    : SMART EVASION (Skipping files containing 'canary')")
     print("=" * 78)
 
     if not resolved_dir.exists():
@@ -86,6 +88,10 @@ def simulate_attack(target_dir: Path, reverse_order: bool = False, delay: float 
         return
 
     all_files = sorted([f for f in resolved_dir.glob("*") if f.is_file()], key=lambda f: f.name.lower(), reverse=reverse_order)
+
+    if evasion_filter:
+        all_files = [f for f in all_files if "canary" not in f.name.lower()]
+        print(f"[*] Evasion Filter Applied: {len(all_files)} target file(s) remaining (All 'canary' decoys skipped).")
 
     if not all_files:
         print("[!] No files found in target directory.")
@@ -143,10 +149,11 @@ if __name__ == "__main__":
     parser.add_argument("--dir", type=str, default=str(SANDBOX_DIR), help="Target directory for simulation")
     parser.add_argument("--delay", type=float, default=1.0, help="Delay between files in seconds")
     parser.add_argument("--vss-tamper", action="store_true", help="Simulate Volume Shadow Copy deletion attack (MITRE T1490)")
+    parser.add_argument("--evasion", action="store_true", help="Simulate smart ransomware filtering out files containing 'canary'")
 
     args = parser.parse_args()
 
     if args.vss_tamper:
         simulate_vss_tamper()
     else:
-        simulate_attack(target_dir=Path(args.dir), reverse_order=args.reverse, delay=args.delay)
+        simulate_attack(target_dir=Path(args.dir), reverse_order=args.reverse, delay=args.delay, evasion_filter=args.evasion)

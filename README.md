@@ -37,12 +37,15 @@ flowchart LR
 ## ✨ Key Features
 
 - **Multi-Extension Canary Fleet:** Deploys authentic decoys across multiple formats (`.db`, `.xlsx`, `.docx`, `.txt`, `.zip`, `.bak`) to trap format-specific lockers.
+- **Stealth Anti-Evasion Matrix:** Deploys disguised tripwires (`!_accounting_customer_vault.db`, `!_executive_payroll_records.xlsx`) that do NOT contain the word `"canary"`, defeating malware programmed with canary-name skip filters.
+- **Process Priority Preemption:** Elevates the EDR agent to `HIGH_PRIORITY_CLASS` on Windows to guarantee OS CPU scheduling over multithreaded ransomware crawlers.
 - **I/O Tar-Pit Delay:** A 2.28MB structured financial ledger forces disk I/O bottlenecks on crawlers, guaranteeing containment before user files are touched.
 - **Shannon Entropy Engine:** Mathematically identifies cryptographic scrambling ($H(X) > 7.0$ bits/byte) to catch zero-day and polymorphic ransomware without relying on static signatures.
 - **Sub-150ms Process Neutralization:** Freezes execution in memory (`proc.suspend()`) and delivers an unconditional `SIGKILL` to the process hierarchy.
 - **Volume Shadow Copy (VSS) Guardian:** Intercepts adversarial attempts to delete system backups (`vssadmin delete shadows`, `wmic`, `wbadmin`, `bcdedit`).
 - **Emergency Firewall Isolation:** Dynamically applies outbound Windows Firewall block rules to stop double-extortion key exfiltration and C2 beaconing.
 - **Self-Healing Canaries:** Automatically re-arms breached decoys immediately after an attack is contained.
+- **Human Anti-Tampering Shield:** Supports Windows Hidden file attributes (`python setup_environment.py --hide-canaries`) to prevent accidental user modification.
 
 ---
 
@@ -85,9 +88,16 @@ python canary_monitor.py
 ### 4. Run the Attack Simulator
 In a second terminal, trigger the safe mock ransomware attack:
 ```powershell
+# Standard Forward Attack
 python mock_ransomware.py
+
+# Smart Evasion Attack (Simulates malware skipping 'canary' names)
+python advanced_mock_ransomware.py --evasion
+
+# Reverse Traversal Attack (Z -> A)
+python advanced_mock_ransomware.py --reverse
 ```
-> **Result:** The simulator targets the canary first, is instantly frozen and killed by SIGKILL, and all real user documents (`assignment.txt`, `photos_info.txt`, `resume.txt`) remain **100% intact**.
+> **Result:** The simulator targets the canary/stealth decoy first, is instantly frozen and killed by SIGKILL (<150ms), and all real user documents remain **100% intact**.
 
 ### 5. Verify Zero Data Loss
 ```powershell

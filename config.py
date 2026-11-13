@@ -3,6 +3,7 @@ config.py - Centralized Configuration for Anti-Ransomware Canary Tripwire System
 """
 
 import os
+import sys
 import io
 import zipfile
 import sqlite3
@@ -28,55 +29,87 @@ CANARY_FILEPATH = SANDBOX_DIR / CANARY_FILENAME
 REVERSE_CANARY_FILENAME = "zz_canary_archive_backup.txt"
 
 # Multi-Extension Canary Matrix & Tar-Pit Delays
-# Deploys high-value decoys (.txt, .xlsx, .db, .docx, .zip, .bak) and a Tar-Pit delay file
+# Deploys high-value decoys (.txt, .xlsx, .db, .docx, .zip, .bak), Tar-Pit delay, and Stealth Anti-Evasion Decoys
 CANARY_FLEET = [
+    # --- Standard Classic Canaries ---
     {
-        "filename": "!_canary_financial_records.txt",
-        "type": "text",
-        "description": "Forward A-Z Tripwire: Confidential Corporate Treasury Ledger",
-        "traversal": "FORWARD"
+        "filename": "!_canary_customer_vault.db",
+        "type": "sqlite",
+        "description": "Forward A-Z Tripwire: SQLite Master Customer Database Vault",
+        "traversal": "FORWARD",
+        "stealth": False
     },
     {
         "filename": "!_canary_executive_payroll.xlsx",
         "type": "xlsx",
         "description": "Forward A-Z Tripwire: Executive Compensation & Bonus Worksheet",
-        "traversal": "FORWARD"
+        "traversal": "FORWARD",
+        "stealth": False
     },
     {
-        "filename": "!_canary_customer_vault.db",
-        "type": "sqlite",
-        "description": "Forward A-Z Tripwire: SQLite Master Customer Database Vault",
-        "traversal": "FORWARD"
+        "filename": "!_canary_financial_records.txt",
+        "type": "text",
+        "description": "Forward A-Z Tripwire: Confidential Corporate Treasury Ledger",
+        "traversal": "FORWARD",
+        "stealth": False
     },
     {
         "filename": "!_canary_legal_contract.docx",
         "type": "docx",
         "description": "Forward A-Z Tripwire: Mutual Non-Disclosure Legal Agreement",
-        "traversal": "FORWARD"
+        "traversal": "FORWARD",
+        "stealth": False
     },
     {
         "filename": "!_canary_tarpit_master_ledger.dat",
         "type": "tarpit",
         "description": "Forward Tar-Pit Decoy: 2.5MB Structured Ledger (Forces I/O Crawl Delay)",
-        "traversal": "FORWARD"
+        "traversal": "FORWARD",
+        "stealth": False
     },
+    # --- Stealth Anti-Evasion Decoys (Defeats 'canary' name skipping filters) ---
+    {
+        "filename": "!_accounting_customer_vault.db",
+        "type": "sqlite",
+        "description": "Stealth Forward Tripwire: Enterprise Customer Account Vault",
+        "traversal": "FORWARD",
+        "stealth": True
+    },
+    {
+        "filename": "!_executive_payroll_records.xlsx",
+        "type": "xlsx",
+        "description": "Stealth Forward Tripwire: Executive Salary & Bonus Worksheet",
+        "traversal": "FORWARD",
+        "stealth": True
+    },
+    # --- Reverse Z-A Canaries & Stealth Decoys ---
     {
         "filename": "zz_canary_archive_backup.txt",
         "type": "text",
         "description": "Reverse Z-A Tripwire: Offline Backup Catalog & Manifest",
-        "traversal": "REVERSE"
+        "traversal": "REVERSE",
+        "stealth": False
     },
     {
         "filename": "zz_canary_archive_backup.zip",
         "type": "zip",
         "description": "Reverse Z-A Tripwire: Disaster Recovery Infrastructure Catalog Archive",
-        "traversal": "REVERSE"
+        "traversal": "REVERSE",
+        "stealth": False
     },
     {
         "filename": "zz_canary_cold_storage.bak",
         "type": "bak",
         "description": "Reverse Z-A Tripwire: Database Cold Storage Backup Manifest",
-        "traversal": "REVERSE"
+        "traversal": "REVERSE",
+        "stealth": False
+    },
+    {
+        "filename": "zz_cold_storage_manifest.bak",
+        "type": "bak",
+        "description": "Stealth Reverse Tripwire: Cold Storage Disaster Backup",
+        "traversal": "REVERSE",
+        "stealth": True
     }
 ]
 
@@ -255,22 +288,12 @@ def generate_canary_file(filename: str, target_path: Path):
     """
     Generates realistic, low-entropy baseline files for each format in the canary fleet.
     Ensures correct binary structure, valid headers, and authentic payload semantics.
+    Supports both classic and stealth anti-evasion filenames.
     """
     target_path.parent.mkdir(parents=True, exist_ok=True)
+    fname_lower = filename.lower()
 
-    if filename == "!_canary_financial_records.txt":
-        target_path.write_text(DEFAULT_CANARY_CONTENT, encoding="utf-8")
-
-    elif filename == "!_canary_executive_payroll.xlsx":
-        buf = io.BytesIO()
-        with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as z:
-            z.writestr("[Content_Types].xml", '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/></Types>')
-            z.writestr("xl/workbook.xml", '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheets><sheet name="Executive_Payroll_FY26" sheetId="1"/></sheets></workbook>')
-            rows = "".join(f'<row r="{i}"><c r="A{i}" t="inlineStr"><is><t>Employee_{i:03d} | Salary: ${140000 + i*1500} | Bonus: ${25000 + i*250}</t></is></c></row>' for i in range(1, 40))
-            z.writestr("xl/worksheets/sheet1.xml", f'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>{rows}</sheetData></worksheet>')
-        target_path.write_bytes(buf.getvalue())
-
-    elif filename == "!_canary_customer_vault.db":
+    if fname_lower.endswith(".db") or "vault" in fname_lower:
         tf = tempfile.NamedTemporaryFile(delete=False)
         tmp_name = tf.name
         tf.close()
@@ -289,30 +312,80 @@ def generate_canary_file(filename: str, target_path: Path):
                 except Exception:
                     pass
 
-    elif filename == "!_canary_legal_contract.docx":
+    elif fname_lower.endswith(".xlsx") or "payroll" in fname_lower:
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as z:
+            z.writestr("[Content_Types].xml", '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/></Types>')
+            z.writestr("xl/workbook.xml", '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheets><sheet name="Executive_Payroll_FY26" sheetId="1"/></sheets></workbook>')
+            rows = "".join(f'<row r="{i}"><c r="A{i}" t="inlineStr"><is><t>Employee_{i:03d} | Salary: ${140000 + i*1500} | Bonus: ${25000 + i*250}</t></is></c></row>' for i in range(1, 40))
+            z.writestr("xl/worksheets/sheet1.xml", f'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>{rows}</sheetData></worksheet>')
+        target_path.write_bytes(buf.getvalue())
+
+    elif fname_lower.endswith(".docx") or "contract" in fname_lower:
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as z:
             z.writestr("[Content_Types].xml", '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="xml" ContentType="application/xml"/></Types>')
             z.writestr("word/document.xml", '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body><w:p><w:r><w:t>RESTRICTED MUTUAL NON-DISCLOSURE AND INTELLECTUAL PROPERTY ESCROW AGREEMENT (CONFIDENTIAL - 2026)</w:t></w:r></w:p></w:body></w:document>')
         target_path.write_bytes(buf.getvalue())
 
-    elif filename == "!_canary_tarpit_master_ledger.dat":
-        # 2.5 MB Tar-Pit structured file designed to force noticeable I/O delay on ransomware crawlers
+    elif fname_lower.endswith(".dat") or "tarpit" in fname_lower:
         header = "================================================================================\nCANARYSHIELD DISTRIBUTED ENTERPRISE LEDGER & TRANSACTION AUDIT ARCHIVE (TAR-PIT)\n================================================================================\n"
         record_block = ("[AUDIT-RECORD] TIMESTAMP=2026-09-30T12:00:00Z | TXN_ID=" + "FEDCBA9876543210" * 2 + " | TRANSFER=$100,000.00 TO SETTLEMENT ACCOUNT | STATUS=VERIFIED\n") * 100
         content = header + (record_block * 150)
         target_path.write_text(content, encoding="utf-8")
 
-    elif filename == "zz_canary_archive_backup.zip":
+    elif fname_lower.endswith(".zip") or "archive" in fname_lower:
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_STORED) as z:
             z.writestr("backup_manifest.txt", REVERSE_CANARY_CONTENT)
             z.writestr("system_catalog.json", '{"dr_site": "East-US-Vault-9", "recovery_objective_mins": 15, "status": "PRISTINE"}')
         target_path.write_bytes(buf.getvalue())
 
-    elif filename == "zz_canary_cold_storage.bak":
+    elif fname_lower.endswith(".bak") or "cold_storage" in fname_lower or "manifest" in fname_lower:
+        target_path.write_text(REVERSE_CANARY_CONTENT, encoding="utf-8")
+
+    elif "zz_" in fname_lower:
         target_path.write_text(REVERSE_CANARY_CONTENT, encoding="utf-8")
 
     else:
-        # Fallback generic text
+        # Fallback corporate financial records text
         target_path.write_text(DEFAULT_CANARY_CONTENT, encoding="utf-8")
+
+
+def boost_process_priority() -> bool:
+    """
+    Sets process execution priority to HIGH_PRIORITY_CLASS on Windows.
+    Guarantees OS kernel scheduling preemption against aggressive multithreaded ransomware crawlers.
+    """
+    if sys.platform == "win32":
+        try:
+            import psutil
+            p = psutil.Process()
+            p.nice(psutil.HIGH_PRIORITY_CLASS)
+            return True
+        except Exception:
+            return False
+    return False
+
+
+def set_file_hidden(filepath: Path, hide: bool = True) -> bool:
+    """
+    Applies or removes the Windows FILE_ATTRIBUTE_HIDDEN attribute to prevent accidental human tampering.
+    Ransomware crawlers using FindFirstFile/FindNextFile still enumerate hidden files, keeping traps active.
+    """
+    if sys.platform == "win32" and filepath.exists():
+        try:
+            import ctypes
+            FILE_ATTRIBUTE_HIDDEN = 0x02
+            FILE_ATTRIBUTE_NORMAL = 0x80
+            attrs = ctypes.windll.kernel32.GetFileAttributesW(str(filepath))
+            if attrs == -1:
+                return False
+            if hide:
+                new_attrs = attrs | FILE_ATTRIBUTE_HIDDEN
+            else:
+                new_attrs = attrs & ~FILE_ATTRIBUTE_HIDDEN
+            return bool(ctypes.windll.kernel32.SetFileAttributesW(str(filepath), new_attrs))
+        except Exception:
+            return False
+    return False
